@@ -9,22 +9,22 @@
 </head>
 <body>
 
-<form action='' method="POST">
+<form action='' method="GET">
 	<input type="text" name="adress" placeholder="Введите адрес">
 	<input type="submit" name="Поиск">
 </form>
 
 <?php
-if (!empty($_POST)) {
+if (!empty($_GET)) {
 
-		foreach ($_POST as  $value) {
-			$adress = $value;
-			break;
-		};
+	foreach ($_GET as  $value) {
+		$adress = $value;
+		break;
+	};
 
-		require __DIR__ . '/vendor/autoload.php';
-		$api = new \Yandex\Geo\Api();
-		$api->setQuery($adress);
+	require __DIR__ . '/vendor/autoload.php';
+	$api = new \Yandex\Geo\Api();
+	$api->setQuery($adress);
 
 	// Настройка фильтров
 	$api
@@ -36,14 +36,15 @@ if (!empty($_POST)) {
 	$response->getQuery(); // исходный запрос
 	$response->getLatitude(); // широта для исходного запроса
 	$response->getLongitude(); // долгота для исходного запроса
-
+	$i=-1;
 	// Список найденных точек
 	$collection = $response->getList();
-	foreach ($collection as $item) {?>
-	    <p> 
+	foreach ($collection as $item) {
+		++$i; ?>
+	    <p><a href="location.php?<?php echo $_SERVER['QUERY_STRING']?>&num=<?php echo $i;?>"> 
 	    <?php echo $item->getLatitude(); // широта ?>;
 	    <?php echo $item->getLongitude(); // долгота?> 
-		</p> 
+		</a></p> 
   <?php $item->getData(); // необработанные данные
 	    $latitude[] = $item->getLatitude();
 	    $longitude[] =  $item->getLongitude();
@@ -55,20 +56,37 @@ if (!empty($_POST)) {
     // Функция ymaps.ready() будет вызвана, когда
     // загрузятся все компоненты API, а также когда будет готово DOM-дерево.
     ymaps.ready(init);
+    <?php if (empty($_GET['num'])) {?>
+	    	function init(){ 
+	            var myMap = new ymaps.Map("map", {
+	                center: [<?php echo $latitude[0];?>, <?php echo $longitude[0];?>],
+	                zoom: 7
+	            }); 
+	            
+	            var myPlacemark = new ymaps.Placemark([<?php echo $latitude[0];?>, <?php echo $longitude[0];?>], {
+	                hintContent: 'Содержимое всплывающей подсказки',
+	                balloonContent: 'Содержимое балуна'
+	            });
+	            
+	            myMap.geoObjects.add(myPlacemark);
+	    	}
+    <?php } else {
+    	$num=$_GET['num'];?>
+			function init(){ 
+	            var myMap = new ymaps.Map("map", {
+	                center: [<?php echo $latitude[$num];?>, <?php echo $longitude[$num];?>],
+	                zoom: 7
+	            }); 
+	            
+	            var myPlacemark = new ymaps.Placemark([<?php echo $latitude[$num];?>, <?php echo $longitude[$num];?>], {
+	                hintContent: 'Содержимое всплывающей подсказки',
+	                balloonContent: 'Содержимое балуна'
+	            });
+	            
+	            myMap.geoObjects.add(myPlacemark);
+	    	}    	
+    <?php }?>
     
-    function init(){ 
-            var myMap = new ymaps.Map("map", {
-                center: [<?php echo $latitude[0];?>, <?php echo $longitude[0];?>],
-                zoom: 7
-            }); 
-            
-            var myPlacemark = new ymaps.Placemark([<?php echo $latitude[0];?>, <?php echo $longitude[0];?>], {
-                hintContent: 'Содержимое всплывающей подсказки',
-                balloonContent: 'Содержимое балуна'
-            });
-            
-            myMap.geoObjects.add(myPlacemark);
-    }
 	</script>
 <?php }
 	
